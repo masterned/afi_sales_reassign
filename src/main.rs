@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::{error, fmt};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct MapAssignInput {
     customer: String,
     state_code: String,
@@ -76,9 +77,12 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         })
         .collect();
 
-    for mai in mais {
-        print!("{:?}\n", mai);
-    }
+    let customer_map: HashMap<String, MapAssignInput> = mais
+        .iter()
+        .map(|mai| (mai.customer.clone(), mai.clone()))
+        .collect();
+
+    dbg!(customer_map);
 
     Ok(())
 }
