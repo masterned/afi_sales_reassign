@@ -1,8 +1,10 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::str::FromStr;
-use std::{error, fmt};
+use std::{
+    collections::HashMap,
+    error, fmt,
+    fs::File,
+    io::{self, BufRead},
+    str::FromStr,
+};
 
 #[derive(Clone, Debug)]
 struct MapAssignInput {
@@ -60,12 +62,11 @@ impl FromStr for MapAssignInput {
     }
 }
 
-fn main() -> Result<(), Box<dyn error::Error>> {
-    let path = "us_customers_mapAssign.csv";
-    let input = File::open(path)?;
-    let buffered = BufReader::new(input);
+fn read_map_into_hashmap(path: &str) -> Result<HashMap<String, MapAssignInput>, io::Error> {
+    let map_input = File::open(path)?;
+    let map_buffer = io::BufReader::new(map_input);
 
-    let mais: Vec<MapAssignInput> = buffered
+    let mais: Vec<MapAssignInput> = map_buffer
         .lines()
         .filter_map(|line| {
             if let Ok(line) = line {
@@ -77,10 +78,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         })
         .collect();
 
-    let customer_map: HashMap<String, MapAssignInput> = mais
+    Ok(mais
         .iter()
         .map(|mai| (mai.customer.clone(), mai.clone()))
-        .collect();
+        .collect())
+}
+
+fn main() -> Result<(), Box<dyn error::Error>> {
+    let map_path = "us_customers_mapAssign.csv";
+    let customer_map = read_map_into_hashmap(map_path)?;
 
     dbg!(customer_map);
 
