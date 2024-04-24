@@ -90,5 +90,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     dbg!(customer_map);
 
+    let sales_path = "customers_with_sales.csv";
+    let sales_file = File::open(sales_path)?;
+    let mut sales_rdr = csv::Reader::from_reader(sales_file);
+
+    for record in sales_rdr.records() {
+        let record = record.expect("need record");
+        dbg!(record);
+    }
+
     Ok(())
 }
