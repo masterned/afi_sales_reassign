@@ -1,80 +1,42 @@
-use std::{
-    collections::HashMap,
-    error, fmt,
-    fs::File,
-    io::{self, BufRead},
-    str::FromStr,
-};
+use std::error;
 
-#[derive(Clone, Debug)]
-struct MapAssignInput {
-    customer: String,
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct MapRecord {
+    company_name: String,
     state_code: String,
+    country_code: String,
     sales_rep: String,
 }
 
-#[derive(Debug)]
-enum MapAssignInputParseError {
-    MissingField(&'static str),
-    ImproperFormat(&'static str, &'static str),
-}
-
-impl fmt::Display for MapAssignInputParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "MapAssignInput parse Error: {}",
-            match self {
-                MapAssignInputParseError::MissingField(field) =>
-                    format!("Missing required field: {}", field),
-                MapAssignInputParseError::ImproperFormat(field, format) =>
-                    format!("{} should be in format: {}", field, format),
-            }
-        )
-    }
-}
-
-impl error::Error for MapAssignInputParseError {}
-
-impl FromStr for MapAssignInput {
-    type Err = MapAssignInputParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut tokens = s.split(',');
-        let customer = tokens
-            .next()
-            .ok_or(MapAssignInputParseError::MissingField("Customer"))?
-            .to_string();
-        let state_code = tokens
-            .next()
-            .ok_or(MapAssignInputParseError::MissingField("State Code"))?
-            .to_string();
-        let sales_rep = tokens
-            .skip(1)
-            .next()
-            .ok_or(MapAssignInputParseError::MissingField("Sales Rep"))?
-            .to_string();
-        Ok(MapAssignInput {
-            customer,
-            state_code,
-            sales_rep,
-        })
-    }
+#[derive(Debug, Deserialize)]
+struct SalesRecord {
+    sales_rep: String,
+    company_name: String,
+    prev_amount_sum: f32,
+    prev_invoice_count: usize,
+    cur_amount_sum: f32,
+    cur_invoice_count: usize,
+    amount_variance: f32,
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let map_path = "us_customers_mapAssign.csv";
     let mut map_rdr = csv::Reader::from_path(map_path)?;
 
-    let map_records: Vec<_> = map_rdr.records().filter_map(|record| record.ok()).collect();
+    let map_records: Vec<MapRecord> = map_rdr
+        .deserialize()
+        .filter_map(|record| record.ok())
+        .collect();
     println!("{:#?}", map_records);
 
     let sales_path = "customers_with_sales.csv";
     let mut sales_rdr = csv::Reader::from_path(sales_path)?;
 
-    for record in sales_rdr.records() {
-        let record = record.expect("need record");
-    }
+    let sales_records: Vec<SalesRecord> =
+        sales_rdr.deserialize().filter_map(|rec| rec.ok()).collect();
+    println!("{:#?}", sales_records);
 
     Ok(())
 }
