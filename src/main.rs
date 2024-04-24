@@ -62,41 +62,18 @@ impl FromStr for MapAssignInput {
     }
 }
 
-fn read_map_into_hashmap(path: &str) -> Result<HashMap<String, MapAssignInput>, io::Error> {
-    let map_input = File::open(path)?;
-    let map_buffer = io::BufReader::new(map_input);
-
-    let mais: Vec<MapAssignInput> = map_buffer
-        .lines()
-        .filter_map(|line| {
-            if let Ok(line) = line {
-                let line_string = format!("{}", line);
-                (&line_string).parse().ok()
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    Ok(mais
-        .iter()
-        .map(|mai| (mai.customer.clone(), mai.clone()))
-        .collect())
-}
-
 fn main() -> Result<(), Box<dyn error::Error>> {
     let map_path = "us_customers_mapAssign.csv";
-    let customer_map = read_map_into_hashmap(map_path)?;
+    let mut map_rdr = csv::Reader::from_path(map_path)?;
 
-    dbg!(customer_map);
+    let map_records: Vec<_> = map_rdr.records().filter_map(|record| record.ok()).collect();
+    println!("{:#?}", map_records);
 
     let sales_path = "customers_with_sales.csv";
-    let sales_file = File::open(sales_path)?;
-    let mut sales_rdr = csv::Reader::from_reader(sales_file);
+    let mut sales_rdr = csv::Reader::from_path(sales_path)?;
 
     for record in sales_rdr.records() {
         let record = record.expect("need record");
-        dbg!(record);
     }
 
     Ok(())
