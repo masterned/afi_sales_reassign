@@ -72,7 +72,16 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             .or_insert_with(|| (*sales_record).clone().into());
     });
 
-    println!("{:#?}", result);
+    let result_path = "result.csv";
+    let mut wtr = csv::Writer::from_path(result_path)?;
+
+    wtr.write_record(&["Company Name", "Sales Rep"])?;
+
+    for value in result.values() {
+        wtr.write_record(&[value.company_name.clone(), value.sales_rep.clone()])?;
+    }
+
+    wtr.flush()?;
 
     Ok(())
 }
