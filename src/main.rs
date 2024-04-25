@@ -23,14 +23,6 @@ struct AddressBookRecord {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct MapRecord {
-    company_name: String,
-    state_code: String,
-    country_code: String,
-    sales_rep: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
 struct StateRepRecord {
     state_code: String,
     sales_rep: String,
@@ -51,15 +43,6 @@ struct SalesRecord {
 struct ResultRecord {
     company_name: String,
     sales_rep: String,
-}
-
-impl From<MapRecord> for ResultRecord {
-    fn from(value: MapRecord) -> Self {
-        ResultRecord {
-            company_name: value.company_name,
-            sales_rep: value.sales_rep,
-        }
-    }
 }
 
 impl From<SalesRecord> for ResultRecord {
