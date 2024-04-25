@@ -3,10 +3,35 @@ use std::{collections::HashMap, error};
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
+struct AddressBookRecord {
+    full_name: String,
+    first_name: String,
+    last_name: String,
+    company_name: String,
+    phone_number: String,
+    email_address: String,
+    username: String,
+    address_line_1: String,
+    address_line_2: String,
+    city: String,
+    state: String,
+    postal_code: String,
+    country_code: String,
+    sales_rep: String,
+    industry: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 struct MapRecord {
     company_name: String,
     state_code: String,
     country_code: String,
+    sales_rep: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct StateRepRecord {
+    state_code: String,
     sales_rep: String,
 }
 
@@ -21,7 +46,7 @@ struct SalesRecord {
     amount_variance: f32,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct ResultRecord {
     company_name: String,
     sales_rep: String,
@@ -46,17 +71,41 @@ impl From<SalesRecord> for ResultRecord {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let map_path = "us_customers_mapAssign.csv";
-    let mut map_rdr = csv::Reader::from_path(map_path)?;
+    let state_reps_path = "state_reps.csv";
+    let mut state_reps_rdr = csv::Reader::from_path(state_reps_path)?;
 
-    let map_records: Vec<MapRecord> = map_rdr
+    let state_reps: HashMap<String, String> = state_reps_rdr
         .deserialize()
-        .filter_map(|record| record.ok())
+        .filter_map(|r| r.ok())
+        .map(|state_rep_record: StateRepRecord| {
+            (state_rep_record.state_code, state_rep_record.sales_rep)
+        })
         .collect();
 
-    let mut result: HashMap<String, ResultRecord> = map_records
-        .iter()
-        .map(|r| (r.company_name.clone(), r.clone().into()))
+    let address_book_path = "address_book.csv";
+    let mut address_book_rdr = csv::Reader::from_path(address_book_path)?;
+
+    let mut result: HashMap<String, ResultRecord> = address_book_rdr
+        .deserialize()
+        .filter_map(|r| r.ok())
+        .filter(|r: &AddressBookRecord| r.country_code == "US")
+        .map(|address_book_record| {
+            let sales_rep;
+
+            if let Some(s0) = state_reps.get(&address_book_record.state) {
+                sales_rep = s0.to_string();
+            } else {
+                sales_rep = address_book_record.sales_rep;
+            }
+
+            (
+                address_book_record.company_name.clone(),
+                ResultRecord {
+                    company_name: address_book_record.company_name,
+                    sales_rep,
+                },
+            )
+        })
         .collect();
 
     let sales_path = "customers_with_sales.csv";
