@@ -1,5 +1,6 @@
 use std::{collections::HashMap, error};
 
+use clap::Parser;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -70,9 +71,31 @@ impl From<SalesRecord> for ResultRecord {
     }
 }
 
+#[derive(Debug, Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Regions CSV file path
+    #[arg(short, long)]
+    regions: String,
+
+    /// Address Book CSV file path
+    #[arg(short, long)]
+    address_book: String,
+
+    /// Sales CSV file path
+    #[arg(short, long)]
+    sales: String,
+
+    /// Output CSV file path
+    #[arg(short, long, default_value_t = String::from("output.csv"))]
+    output: String,
+}
+
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let state_reps_path = "state_reps.csv";
-    let mut state_reps_rdr = csv::Reader::from_path(state_reps_path)?;
+    let args = Args::parse();
+
+    let regions_path = args.regions;
+    let mut state_reps_rdr = csv::Reader::from_path(regions_path)?;
 
     let state_reps: HashMap<String, String> = state_reps_rdr
         .deserialize()
@@ -82,7 +105,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         })
         .collect();
 
-    let address_book_path = "address_book.csv";
+    let address_book_path = args.address_book;
     let mut address_book_rdr = csv::Reader::from_path(address_book_path)?;
 
     let mut result: HashMap<String, ResultRecord> = address_book_rdr
@@ -108,7 +131,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         })
         .collect();
 
-    let sales_path = "customers_with_sales.csv";
+    let sales_path = args.sales;
     let mut sales_rdr = csv::Reader::from_path(sales_path)?;
 
     let sales_records: Vec<SalesRecord> =
@@ -121,7 +144,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             .or_insert_with(|| (*sales_record).clone().into());
     });
 
-    let result_path = "result.csv";
+    let result_path = args.output;
     let mut wtr = csv::Writer::from_path(result_path)?;
 
     wtr.write_record(&["Company Name", "Sales Rep"])?;
